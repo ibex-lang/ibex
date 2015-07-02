@@ -22,6 +22,12 @@ func main() {
 
 func compile(src string, name string) {
     block := Blockify(src)
-    fmt.Printf("%s:\n", name)
-    fmt.Println(block)
+    s := NewStructure(block)
+
+    unit, err := Parse(s)
+    if err != nil {
+        fmt.Println(err)
+    } else {
+        fmt.Printf("%#v\n", unit)
+    }
 }
