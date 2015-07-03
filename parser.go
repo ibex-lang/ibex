@@ -127,6 +127,137 @@ func (s *Structure) getBlock() (*Structure, bool) {
     }
 }
 
+func ParseType(lex *Lexer) (IbexType, error) {
+    return parseType(lex)
+}
+
+func parseType(lex *Lexer) (IbexType, error) {
+    tok := lex.NextToken()
+    switch tok.Ty {
+    
+    case TokenFunction:
+        argType, err := parseType(lex)
+        if err != nil {
+            return nil, err
+        }
+        var retType IbexType = nil
+        if lex.PeekToken().Ty == TokenArrow {
+            lex.NextToken() // consume ->
+            retType, err = parseType(lex)
+            if err != nil {
+                return nil, err
+            }
+        }
+        return IbexFunctionType{argType, retType}, nil
+
+    case TokenIdent:
+        return parseIdentType(tok, lex)
+
+    case TokenLParen:
+        tok = lex.NextToken()
+
+        namedTypes := make([]*IbexNamedTupleEntry, 0)
+        normalTypes := make([]IbexType, 0)
+        named := false
+        if tok.Ty == TokenIdent {
+            if lex.PeekToken().Ty == TokenColon {
+                // named tuple
+                lex.NextToken() // consume :
+                tag := tok.Value
+                named = true
+                ty, err := parseType(lex)
+                if err != nil {
+                    return nil, err
+                }
+                entry := IbexNamedTupleEntry{tag, ty}
+                namedTypes = append(namedTypes, &entry)
+            } else {
+                // normal tuple
+                ty, err := parseIdentType(tok, lex)
+                if err != nil {
+                    return nil, err
+                }
+                normalTypes = append(normalTypes, ty)
+            }
+        } else {
+            ty, err := parseType(lex)
+            if err != nil {
+                return nil, err
+            }
+            normalTypes = append(normalTypes, ty)
+        }
+
+        if named {
+            for lex.PeekToken().Ty == TokenComma {
+                lex.NextToken() // consume ,
+                tok = lex.NextToken()
+                if tok.Ty != TokenIdent {
+                    return nil, ErrorAtToken(tok, "Expected identifier")
+                }
+                next := lex.NextToken()
+                if next.Ty != TokenColon {
+                    return nil, ErrorAtToken(tok, "Expected ':'")
+                }
+
+                ty, err := parseType(lex)
+                if err != nil {
+                    return nil, err
+                }
+                entry := IbexNamedTupleEntry{tok.Value, ty}
+                namedTypes = append(namedTypes, &entry)
+            }
+            paren := lex.NextToken()
+            if paren.Ty != TokenRParen {
+                return nil, ErrorAtToken(paren, "Expected ')'")
+            }
+            return IbexNamedTupleType{namedTypes}, nil
+        } else {
+            for lex.PeekToken().Ty == TokenComma {
+                lex.NextToken() // consume ,
+                ty, err := parseType(lex)
+                if err != nil {
+                    return nil, err
+                }
+                normalTypes = append(normalTypes, ty)
+            }
+            paren := lex.NextToken()
+
+            if paren.Ty != TokenRParen {
+                return nil, ErrorAtToken(paren, "Expected ')'")
+            }
+            return IbexTupleType{normalTypes}, nil
+        }
+
+    case TokenLBrace:
+        tok = lex.NextToken()
+        if tok.Ty != TokenRBrace {
+            return nil, ErrorAtToken(tok, "Expected ']'")
+        }
+        dims := 1
+        for lex.PeekToken().Ty == TokenLBrace {
+            lex.NextToken() // consume [
+            tok = lex.NextToken()
+            if tok.Ty != TokenRBrace {
+               return nil, ErrorAtToken(tok, "Expected ']'")
+            }
+        }
+        ty, err := parseType(lex)
+        if err != nil {
+            return nil, err
+        }
+        return IbexArrayType{ty, dims}, nil
+    }
+
+    return nil, ErrorAtToken(tok, "Unexpected token")
+}
+
+func parseIdentType(tok *Token, lex *Lexer) (IbexType, error) {
+    if tok == nil {
+        tok = lex.NextToken()
+    }
+    return IbexSimpleType{tok.Value}, nil
+}
+
 func Parse(s *Structure) (*ASTCompilationUnit, error) {
     return parse(s)
 }
@@ -148,6 +279,8 @@ func parse(s *Structure) (*ASTCompilationUnit, error) {
                 return nil, err
             }
             unit.Uses = append(unit.Uses, use)
+        } else if t.Ty == TokenFunction {
+
         }
 
         lex, next = s.getLine()
@@ -172,3 +305,8 @@ func parseUseStmt(lex *Lexer) (*ASTUseStmt, error) {
 
     return &ASTUseStmt{path}, nil
 }
+
+func parseFunction(lex *Lexer) (*ASTFunction, error) {
+    return nil, nil
+}
+

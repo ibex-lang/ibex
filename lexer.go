@@ -13,6 +13,7 @@ const (
 
     TokenIdent
     TokenNumber
+    TokenString
 
     TokenFunction // fn
     TokenMatch    // match
@@ -78,20 +79,20 @@ func NewLexer(src string) *Lexer {
 }
 
 func (l *Lexer) NextToken() *Token {
-    if l.peekTok != nil {
+    if l.peekTok == nil {
+        return <-l.tokens
+    } else {
         tok := l.peekTok
         l.peekTok = nil
-        return tok
-    } else {
-        return <-l.tokens
+        return tok        
     }
 }
 
 func (l *Lexer) PeekToken() *Token {
-    if l.peekTok != nil {
+    if l.peekTok == nil {
+        l.peekTok = <-l.tokens
         return l.peekTok
     } else {
-        l.peekTok = <-l.tokens
         return l.peekTok
     }
 }
@@ -216,6 +217,8 @@ func (l *Lexer) getToken() bool {
     case '(': l.emitToken(TokenLParen)
     case ')': l.emitToken(TokenRParen)
 
+    case '"': l.readString()
+
     case ' ', '\n', '\r':
         l.start++
         break
@@ -254,3 +257,15 @@ func (l *Lexer) readNumber() {
     }
     l.emitToken(TokenNumber)
 }
+
+func (l *Lexer) readString() {
+    for l.read() != '"' {}
+    l.tokens <- &Token{
+        Value: l.src[l.start + 1:l.pos - 1],
+        Ty: TokenString,
+        Start: l.start,
+        End: l.pos,
+    }
+}
+
+

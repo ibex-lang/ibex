@@ -7,11 +7,11 @@ type ASTCompilationUnit struct {
     Declarations []ASTMemberDeclaration
 }
 
-type ASTMemberDeclaration interface {}
-
 type ASTUseStmt struct {
     Path []string
 }
+
+type ASTMemberDeclaration interface {}
 
 type ASTBody struct {
     Children []ASTNode
