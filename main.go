@@ -21,14 +21,15 @@ func main() {
 }
 
 func compile(src string, name string) {
-    block := Blockify(src)
-    s := NewStructure(block)
+    InitExpressionParsing()
 
-    unit, err := Parse(s)
+    lex := NewLexer(src)
+    go lex.Run()
 
-    if err != nil {
-        fmt.Println(err)
+    expr, err := ParseExpression(lex)
+    if err == nil {
+        fmt.Printf("%#v\n", expr)
     } else {
-        fmt.Printf("%#v\n", unit)
+        fmt.Println(err)
     }
 }

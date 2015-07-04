@@ -23,6 +23,7 @@ const (
     TokenSub // -
     TokenDiv // /
     TokenMul // *
+    TokenMod // %
 
     TokenBang   // !
     TokenPipe   // |
@@ -176,6 +177,7 @@ func (l *Lexer) getToken() bool {
         }
     case '/': l.emitToken(TokenDiv)
     case '*': l.emitToken(TokenMul)
+    case '%': l.emitToken(TokenMod)
 
     case '!':
         if l.accept('=') {

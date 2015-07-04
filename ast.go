@@ -48,3 +48,33 @@ type NotExpr struct {
 type NegateExpr struct {
     Expr Expression
 }
+
+type AddExpr struct {
+    Left Expression
+    Right Expression
+}
+
+type SubExpr struct {
+    Left Expression
+    Right Expression
+}
+
+type FunctionCallExpr struct {
+    Input Expression
+    Target Expression
+}
+
+type MulExpr struct {
+    Left Expression
+    Right Expression
+}
+
+type DivExpr struct {
+    Left Expression
+    Right Expression
+}
+
+type ModExpr struct {
+    Left Expression
+    Right Expression
+}
