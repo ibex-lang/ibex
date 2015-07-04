@@ -27,7 +27,7 @@ type GeneralBody struct {
 func (g GeneralBody) isGeneral() {}
 
 type GeneralLine struct {
-    line string 
+    line string
 }
 func (g GeneralLine) isGeneral() {}
 
@@ -134,7 +134,7 @@ func ParseType(lex *Lexer) (IbexType, error) {
 func parseType(lex *Lexer) (IbexType, error) {
     tok := lex.NextToken()
     switch tok.Ty {
-    
+
     case TokenFunction:
         argType, err := parseType(lex)
         if err != nil {
@@ -280,7 +280,11 @@ func parse(s *Structure) (*ASTCompilationUnit, error) {
             }
             unit.Uses = append(unit.Uses, use)
         } else if t.Ty == TokenFunction {
-
+            fn, err := parseFunction(lex)
+            if err != nil {
+                return nil, err
+            }
+            unit.Declarations = append(unit.Declarations, fn)
         }
 
         lex, next = s.getLine()
@@ -306,7 +310,77 @@ func parseUseStmt(lex *Lexer) (*ASTUseStmt, error) {
     return &ASTUseStmt{path}, nil
 }
 
+func parseParameter(lex *Lexer) (*FunctionParameter, error) {
+    tok := lex.NextToken()
+    if tok.Ty != TokenIdent {
+        return nil, ErrorAtToken(tok, "Expected identifier")
+    }
+    name := tok.Value
+    tok = lex.NextToken()
+    if tok.Ty != TokenColon {
+        return nil, ErrorAtToken(tok, "Expected ':'")
+    }
+    ty, err := parseType(lex)
+    if err != nil {
+        return nil, err
+    }
+    return &FunctionParameter{name, ty}, nil
+}
+
 func parseFunction(lex *Lexer) (*ASTFunction, error) {
-    return nil, nil
+    ident := lex.NextToken()
+    if ident.Ty != TokenIdent {
+        return nil, ErrorAtToken(ident, "Expected identifier")
+    }
+
+    params := make([]*FunctionParameter, 0)
+    peek := lex.PeekToken()
+    if peek.Ty == TokenIdent {
+        param, err := parseParameter(lex)
+        if err != nil {
+            return nil, err
+        }
+        params = append(params, param)
+    } else if peek.Ty == TokenLParen {
+        lex.NextToken() // consume (
+
+        param, err := parseParameter(lex)
+        if err != nil {
+            return nil, err
+        }
+        params = append(params, param)
+
+        for lex.PeekToken().Ty == TokenComma {
+            lex.NextToken()
+            param, err = parseParameter(lex)
+            if err != nil {
+                return nil, err
+            }
+            params = append(params, param)
+        }
+
+        paren := lex.NextToken()
+        if paren.Ty != TokenRParen {
+            return nil, ErrorAtToken(paren, "Expected ')'")
+        }
+    }
+
+    var retType IbexType = nil
+    tok := lex.NextToken()
+    if tok.Ty == TokenArrow {
+        ty, err := parseType(lex)
+        if err != nil {
+            return nil, err
+        }
+        retType = ty // doesn't compile without this!?
+    }
+
+    fn := ASTFunction{
+        Name: ident.Value,
+        Parameters: params,
+        Return: retType,
+        Body: nil,
+    }
+    return &fn, nil
 }
 

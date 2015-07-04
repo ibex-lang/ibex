@@ -19,5 +19,32 @@ type ASTBody struct {
 
 type ASTFunction struct {
     Name string
-    Body ASTBody
+    Parameters []*FunctionParameter
+    Return IbexType
+    Body *ASTBody
+}
+
+type FunctionParameter struct {
+    Name string
+    Type IbexType
+}
+
+type Expression interface {
+    ASTNode
+}
+
+type IdentExpr struct {
+    Ident string
+}
+
+type NumberExpr struct {
+    Number string
+}
+
+type NotExpr struct {
+    Expr Expression
+}
+
+type NegateExpr struct {
+    Expr Expression
 }

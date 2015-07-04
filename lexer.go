@@ -84,7 +84,7 @@ func (l *Lexer) NextToken() *Token {
     } else {
         tok := l.peekTok
         l.peekTok = nil
-        return tok        
+        return tok
     }
 }
 
@@ -102,7 +102,7 @@ func (l *Lexer) peek() rune {
         chr, _ := utf8.DecodeRuneInString(l.src[l.pos:])
         return chr
     }
-    return utf8.RuneError 
+    return utf8.RuneError
 }
 
 func (l *Lexer) read() rune {
@@ -227,7 +227,7 @@ func (l *Lexer) getToken() bool {
         if IsIdentStart(chr) {
             l.readIdent()
         } else if IsDigit(chr) {
-            l.readNumber()            
+            l.readNumber()
         } else {
             err := fmt.Sprintf("Unexpected character: '%c'", chr)
             l.emitError(err)
@@ -267,5 +267,3 @@ func (l *Lexer) readString() {
         End: l.pos,
     }
 }
-
-
