@@ -122,17 +122,88 @@ func ParseUnaryPrefix(lex *Lexer, tok *Token) (Expression, error) {
     }
 }
 
+// parses a grouping/tuple/named tuple
 func ParseGrouping(lex *Lexer, tok *Token) (Expression, error) {
     expr, err := ParseExpression(lex)
     if err != nil {
         return nil, err
     }
-    paren := lex.NextToken()
-    if paren.Ty != TokenRParen {
-        return nil, ErrorAtToken(paren, "Expected ')'")
+
+    peek := lex.PeekToken()
+    if peek.Ty == TokenRParen {
+        return expr, nil
+    } else if peek.Ty == TokenComma {
+        return parseTupleLiteral(expr, lex)
+    } else if peek.Ty == TokenColon {
+        return parseNamedTupleLiteral(expr, lex)
+    } else {
+        return nil, ErrorAtToken(peek, "Expected ')'")
+    }
+}
+
+func parseTupleLiteral(first Expression, lex *Lexer) (Expression, error) {
+    elems := []Expression{first}
+    tok := lex.NextToken()
+    for tok.Ty == TokenComma {
+        expr, err := ParseExpression(lex)
+        if err != nil {
+            return nil, err
+        }
+        elems = append(elems, expr)
+        tok = lex.NextToken()
     }
 
-    return expr, nil
+    if tok.Ty != TokenRParen {
+        return nil, ErrorAtToken(tok, "Expected ')'")
+    }
+
+    return TupleExpr{elems}, nil
+}
+
+func parseNamedTupleLiteral(firstTag Expression,
+    lex *Lexer) (Expression, error) {
+
+    lex.NextToken()
+    var tag string
+    // TODO make better
+    switch firstTag.(type) {
+    case IdentExpr:
+        tag = firstTag.(IdentExpr).Ident
+    default:
+        // PeekToken() should = colon
+        return nil, ErrorAtToken(lex.PeekToken(), "Expected identifier preceding")
+    }
+
+    expr, err := ParseExpression(lex)
+    if err != nil {
+        return nil, err
+    }
+
+    elems := []*NamedTupleEntry{&NamedTupleEntry{tag, expr}}
+
+    tok := lex.NextToken()
+    for tok.Ty == TokenComma {
+        tok = lex.NextToken()
+        if tok.Ty != TokenIdent {
+            return nil, ErrorAtToken(tok, "Expected identifier")
+        }
+        tag = tok.Value
+        tok = lex.NextToken()
+        if tok.Ty != TokenColon {
+            return nil, ErrorAtToken(tok, "Expected ':'")
+        }
+        expr, err := ParseExpression(lex)
+        if err != nil {
+            return nil, err
+        }
+        elems = append(elems, &NamedTupleEntry{tag, expr})
+        tok = lex.NextToken()
+    }
+    if tok.Ty != TokenRParen {
+        return nil, ErrorAtToken(tok, "Expected ')'")
+    }
+
+    return NamedTupleExpr{elems}, nil
 }
 
 type InfixParser struct {

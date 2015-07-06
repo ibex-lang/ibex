@@ -96,3 +96,15 @@ type ArrayAccessExpr struct {
     Target Expression
     Index Expression
 }
+
+type TupleExpr struct {
+    Elements []Expression
+}
+
+type NamedTupleEntry struct {
+    Tag string
+    Expr Expression
+}
+type NamedTupleExpr struct {
+    Elements []*NamedTupleEntry
+}
