@@ -17,6 +17,7 @@ var postfixParsers map[TokenType]PostfixParser
 func InitExpressionParsing() {
     prefixParsers = map[TokenType]PrefixParser{
         TokenIdent:     ParseIdent,
+        TokenString:    ParseString,
         TokenNumber:    ParseNumber,
         TokenBang:      ParseUnaryPrefix,
         TokenSub:       ParseUnaryPrefix,
@@ -96,6 +97,10 @@ type PrefixParser func (*Lexer, *Token) (Expression, error)
 
 func ParseIdent(lex *Lexer, tok *Token) (Expression, error) {
     return IdentExpr{tok.Value}, nil
+}
+
+func ParseString(lex *Lexer, tok *Token) (Expression, error) {
+    return StringExpr{tok.Value}, nil
 }
 
 func ParseNumber(lex *Lexer, tok *Token) (Expression, error) {

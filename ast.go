@@ -42,6 +42,10 @@ type IdentExpr struct {
     Ident string
 }
 
+type StringExpr struct {
+    String string
+}
+
 type NumberExpr struct {
     Number string
 }
