@@ -43,8 +43,8 @@ const (
     TokenEQ  // ==
     TokenNE  // !=
 
-    TokenLBrace // [
-    TokenRBrace // ]
+    TokenLBracket // [
+    TokenRBracket // ]
     TokenLParen // (
     TokenRParen // )
 )
@@ -216,8 +216,8 @@ func (l *Lexer) getToken() bool {
             l.emitToken(TokenAssign)
         }
 
-    case '[': l.emitToken(TokenLBrace)
-    case ']': l.emitToken(TokenRBrace)
+    case '[': l.emitToken(TokenLBracket)
+    case ']': l.emitToken(TokenRBracket)
     case '(': l.emitToken(TokenLParen)
     case ')': l.emitToken(TokenRParen)
 

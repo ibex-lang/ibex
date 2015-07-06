@@ -38,7 +38,7 @@ func InitExpressionParsing() {
 
     postfixParsers = map[TokenType]PostfixParser{
         TokenBang:   ParseUnsafeAccess,
-        TokenLBrace: ParseArrayAccess,
+        TokenLBracket: ParseArrayAccess,
     }
 }
 
@@ -204,7 +204,7 @@ func ParseArrayAccess(left Expression, lex *Lexer,
     }
 
     tok = lex.NextToken()
-    if tok.Ty != TokenRBrace {
+    if tok.Ty != TokenRBracket {
         return nil, ErrorAtToken(tok, "Expected ']'")
     }
 

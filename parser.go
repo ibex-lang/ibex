@@ -228,16 +228,16 @@ func parseType(lex *Lexer) (IbexType, error) {
             return IbexTupleType{normalTypes}, nil
         }
 
-    case TokenLBrace:
+    case TokenLBracket:
         tok = lex.NextToken()
-        if tok.Ty != TokenRBrace {
+        if tok.Ty != TokenRBracket {
             return nil, ErrorAtToken(tok, "Expected ']'")
         }
         dims := 1
-        for lex.PeekToken().Ty == TokenLBrace {
+        for lex.PeekToken().Ty == TokenLBracket {
             lex.NextToken() // consume [
             tok = lex.NextToken()
-            if tok.Ty != TokenRBrace {
+            if tok.Ty != TokenRBracket {
                return nil, ErrorAtToken(tok, "Expected ']'")
             }
         }
