@@ -24,6 +24,11 @@ type ASTFunction struct {
     Body *ASTBody
 }
 
+type ASTTypeDeclaration struct {
+    Name string
+    Type IbexType
+}
+
 type FunctionParameter struct {
     Name string
     Type IbexType

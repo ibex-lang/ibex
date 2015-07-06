@@ -285,6 +285,12 @@ func parse(s *Structure) (*ASTCompilationUnit, error) {
                 return nil, err
             }
             unit.Declarations = append(unit.Declarations, fn)
+        } else if t.Ty == TokenTypeKW {
+            decl, err := parseTypeDecl(lex)
+            if err != nil {
+                return nil, err
+            }
+            unit.Declarations = append(unit.Declarations, decl)
         }
 
         lex, next = s.getLine()
@@ -384,3 +390,22 @@ func parseFunction(lex *Lexer) (*ASTFunction, error) {
     return &fn, nil
 }
 
+func parseTypeDecl(lex *Lexer) (*ASTTypeDeclaration, error) {
+    ident := lex.NextToken()
+    if ident.Ty != TokenIdent {
+        return nil, ErrorAtToken(ident, "Expected identifier")
+    }
+
+    tok := lex.NextToken()
+    if tok.Ty != TokenAssign {
+        return nil, ErrorAtToken(tok, "Expected '='")
+    }
+
+    ty, err := parseType(lex)
+    if err != nil {
+        return nil, err
+    }
+
+    decl := ASTTypeDeclaration{ident.Value, ty}
+    return &decl, nil
+}

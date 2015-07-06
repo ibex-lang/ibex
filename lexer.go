@@ -18,6 +18,7 @@ const (
     TokenFunction // fn
     TokenMatch    // match
     TokenUse      // use
+    TokenTypeKW   // type
 
     TokenAdd // +
     TokenSub // -
@@ -52,6 +53,7 @@ var keywords map[string]TokenType = map[string]TokenType{
     "fn": TokenFunction,
     "match": TokenMatch,
     "use": TokenUse,
+    "type": TokenTypeKW,
 }
 
 type Token struct {
