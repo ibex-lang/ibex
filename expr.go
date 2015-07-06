@@ -6,10 +6,12 @@ const (
     FunctionCallPrecedence   // ->
     AdditivePrecedence       // +, -
     MultiplicativePrecedence // *, /, %
+    PostfixPrecedence
 )
 
 var prefixParsers map[TokenType]PrefixParser
 var infixParsers map[TokenType]InfixParser
+var postfixParsers map[TokenType]PostfixParser
 
 // bypass initialization loop
 func InitExpressionParsing() {
@@ -18,18 +20,24 @@ func InitExpressionParsing() {
         TokenNumber:    ParseNumber,
         TokenBang:      ParseUnaryPrefix,
         TokenSub:       ParseUnaryPrefix,
+        TokenLParen:    ParseGrouping,
     }
 
     additive := InfixParser{ParseAdditive, AdditivePrecedence}
     multiplicative := InfixParser{ParseMultiplicative, MultiplicativePrecedence}
 
     infixParsers = map[TokenType]InfixParser{
-        TokenAdd: additive,
-        TokenSub: additive,
-        TokenMul: multiplicative,
-        TokenDiv: multiplicative,
-        TokenMod: multiplicative,
+        TokenAdd:   additive,
+        TokenSub:   additive,
+        TokenMul:   multiplicative,
+        TokenDiv:   multiplicative,
+        TokenMod:   multiplicative,
         TokenArrow: InfixParser{ParseFunctionCall, FunctionCallPrecedence},
+    }
+
+    postfixParsers = map[TokenType]PostfixParser{
+        TokenBang:   ParseUnsafeAccess,
+        TokenLBrace: ParseArrayAccess,
     }
 }
 
@@ -48,6 +56,17 @@ func ParseExpressionP(precedence int, lex *Lexer) (Expression, error) {
     left, err := prefixParser(lex, tok)
     if err != nil {
         return nil, err
+    }
+
+    _, next := postfixParsers[lex.PeekToken().Ty]
+    for next {
+        tok := lex.NextToken()
+        left, err = postfixParsers[tok.Ty](left, lex, tok)
+        if err != nil {
+            return nil, err
+        }
+
+        _, next = postfixParsers[lex.PeekToken().Ty]
     }
 
     for precedence < nextPrecedence(lex) {
@@ -116,6 +135,8 @@ type InfixParser struct {
     Precedence int
 }
 
+type PostfixParser func(Expression, *Lexer, *Token) (Expression, error)
+
 func ParseAdditive(left Expression, lex *Lexer,
     tok *Token) (Expression, error) {
 
@@ -161,4 +182,26 @@ func ParseMultiplicative(left Expression, lex *Lexer,
     } else {
         return nil, ErrorAtToken(tok, "Unexpected token")
     }
+}
+
+func ParseUnsafeAccess(left Expression, lex *Lexer,
+    tok *Token) (Expression, error) {
+
+    return UnsafeAccessExpr{left}, nil
+}
+
+func ParseArrayAccess(left Expression, lex *Lexer,
+    tok *Token) (Expression, error) {
+
+    idx, err := ParseExpression(lex)
+    if err != nil {
+        return nil, err
+    }
+
+    tok = lex.NextToken()
+    if tok.Ty != TokenRBrace {
+        return nil, ErrorAtToken(tok, "Expected ']'")
+    }
+
+    return ArrayAccessExpr{left, idx}, nil
 }

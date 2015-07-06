@@ -78,3 +78,12 @@ type ModExpr struct {
     Left Expression
     Right Expression
 }
+
+type UnsafeAccessExpr struct {
+    Expr Expression
+}
+
+type ArrayAccessExpr struct {
+    Target Expression
+    Index Expression
+}
