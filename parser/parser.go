@@ -5,7 +5,7 @@ import (
     "fmt"
 	"errors"
 
-	"github.com/augustt198/ibex/core"
+	"github.com/ibex-lang/ibex/core"
 )
 
 const indentWidth int = 4

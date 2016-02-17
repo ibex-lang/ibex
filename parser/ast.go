@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/augustt198/ibex/core"
+import "github.com/ibex-lang/ibex/core"
 
 type ASTNode interface {}
 

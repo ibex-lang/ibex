@@ -5,7 +5,7 @@ import (
     "io/ioutil"
     "fmt"
 
-	"github.com/augustt198/ibex/parser"
+	"github.com/ibex-lang/ibex/parser"
 )
 
 func main() {

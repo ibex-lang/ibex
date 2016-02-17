@@ -4,7 +4,7 @@ import (
     "fmt"
     "unicode/utf8"
 
-	"github.com/augustt198/ibex/util"
+	"github.com/ibex-lang/ibex/util"
 )
 
 type TokenType int
