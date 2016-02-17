@@ -1,4 +1,4 @@
-package main
+package util
 
 func IsDigit(chr rune) bool {
     return chr >= '0' && chr <= '9'

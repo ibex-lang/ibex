@@ -1,4 +1,4 @@
-package main
+package parser
 
 const (
     _ = iota // ignore 0
@@ -131,6 +131,7 @@ func ParseGrouping(lex *Lexer, tok *Token) (Expression, error) {
 
     peek := lex.PeekToken()
     if peek.Ty == TokenRParen {
+		lex.NextToken()
         return expr, nil
     } else if peek.Ty == TokenComma {
         return parseTupleLiteral(expr, lex)

@@ -1,19 +1,22 @@
-package main
+package parser
 
 import (
     "strings"
     "fmt"
+	"errors"
+
+	"github.com/augustt198/ibex/core"
 )
 
 const indentWidth int = 4
 
-func indentDepth(line string) int {
+func indentDepth(line string) (int, bool) {
     for i, c := range line {
         if c != ' ' {
-            return i / indentWidth
+            return i / indentWidth, i % indentWidth == 0
         }
     }
-    return len(line) / indentWidth
+    return len(line) / indentWidth, len(line) % indentWidth == 0
 }
 
 // ugly algebraic types
@@ -31,19 +34,23 @@ type GeneralLine struct {
 }
 func (g GeneralLine) isGeneral() {}
 
-func Blockify(src string) *GeneralBody {
+func Blockify(src string) (*GeneralBody, error) {
     lines := strings.Split(src, "\n")
     idx := 0
 
     return parseGeneral(&idx, 0, lines)
 }
 
-func parseGeneral(idx *int, lvl int, lines []string) *GeneralBody {
+func parseGeneral(idx *int, lvl int, lines []string) (*GeneralBody, error) {
     body := GeneralBody{children: make([]GeneralNode, 0)}
 
     for *idx < len(lines) {
         line := lines[*idx]
-        indent := indentDepth(line)
+        indent, valid := indentDepth(line)
+		if !valid {
+			return nil, errors.New("Invalid indentation")
+		}
+
         if indent == lvl {
             child := GeneralLine{
                 line: line[indent * indentWidth:],
@@ -51,14 +58,17 @@ func parseGeneral(idx *int, lvl int, lines []string) *GeneralBody {
             body.children = append(body.children, child)
             *idx++
         } else if indent == lvl + 1 {
-            child := parseGeneral(idx, lvl + 1, lines)
+            child, err := parseGeneral(idx, lvl + 1, lines)
+			if err != nil {
+				return nil, err
+			}
             body.children = append(body.children, child)
         } else {
             break
         }
     }
 
-    return &body
+    return &body, nil
 }
 
 type ParseError struct {
@@ -127,11 +137,27 @@ func (s *Structure) getBlock() (*Structure, bool) {
     }
 }
 
-func ParseType(lex *Lexer) (IbexType, error) {
+type ParsingContext int
+
+const (
+    ModuleContext = iota
+    FunctionBodyContext
+)
+func ParseType(lex *Lexer) (core.IbexType, error) {
     return parseType(lex)
 }
 
-func parseType(lex *Lexer) (IbexType, error) {
+/*
+func (s *Structure) parse(ctx ParsingContext) (ASTNode, error) {
+    line, ok := s.getLine()
+    for ok {
+        line, ok = s.getLine()
+    }
+
+	return nil, nil
+}*/
+
+func parseType(lex *Lexer) (core.IbexType, error) {
     tok := lex.NextToken()
     switch tok.Ty {
 
@@ -140,7 +166,7 @@ func parseType(lex *Lexer) (IbexType, error) {
         if err != nil {
             return nil, err
         }
-        var retType IbexType = nil
+        var retType core.IbexType = nil
         if lex.PeekToken().Ty == TokenArrow {
             lex.NextToken() // consume ->
             retType, err = parseType(lex)
@@ -148,7 +174,7 @@ func parseType(lex *Lexer) (IbexType, error) {
                 return nil, err
             }
         }
-        return IbexFunctionType{argType, retType}, nil
+        return core.IbexFunctionType{argType, retType}, nil
 
     case TokenIdent:
         return parseIdentType(tok, lex)
@@ -156,8 +182,8 @@ func parseType(lex *Lexer) (IbexType, error) {
     case TokenLParen:
         tok = lex.NextToken()
 
-        namedTypes := make([]*IbexNamedTupleEntry, 0)
-        normalTypes := make([]IbexType, 0)
+        namedTypes := make([]*core.IbexNamedTupleEntry, 0)
+        normalTypes := make([]core.IbexType, 0)
         named := false
         if tok.Ty == TokenIdent {
             if lex.PeekToken().Ty == TokenColon {
@@ -169,7 +195,7 @@ func parseType(lex *Lexer) (IbexType, error) {
                 if err != nil {
                     return nil, err
                 }
-                entry := IbexNamedTupleEntry{tag, ty}
+                entry := core.IbexNamedTupleEntry{tag, ty}
                 namedTypes = append(namedTypes, &entry)
             } else {
                 // normal tuple
@@ -203,14 +229,14 @@ func parseType(lex *Lexer) (IbexType, error) {
                 if err != nil {
                     return nil, err
                 }
-                entry := IbexNamedTupleEntry{tok.Value, ty}
+                entry := core.IbexNamedTupleEntry{tok.Value, ty}
                 namedTypes = append(namedTypes, &entry)
             }
             paren := lex.NextToken()
             if paren.Ty != TokenRParen {
                 return nil, ErrorAtToken(paren, "Expected ')'")
             }
-            return IbexNamedTupleType{namedTypes}, nil
+            return core.IbexNamedTupleType{namedTypes}, nil
         } else {
             for lex.PeekToken().Ty == TokenComma {
                 lex.NextToken() // consume ,
@@ -225,7 +251,7 @@ func parseType(lex *Lexer) (IbexType, error) {
             if paren.Ty != TokenRParen {
                 return nil, ErrorAtToken(paren, "Expected ')'")
             }
-            return IbexTupleType{normalTypes}, nil
+            return core.IbexTupleType{normalTypes}, nil
         }
 
     case TokenLBracket:
@@ -245,17 +271,17 @@ func parseType(lex *Lexer) (IbexType, error) {
         if err != nil {
             return nil, err
         }
-        return IbexArrayType{ty, dims}, nil
+        return core.IbexArrayType{ty, dims}, nil
     }
 
     return nil, ErrorAtToken(tok, "Unexpected token")
 }
 
-func parseIdentType(tok *Token, lex *Lexer) (IbexType, error) {
+func parseIdentType(tok *Token, lex *Lexer) (core.IbexType, error) {
     if tok == nil {
         tok = lex.NextToken()
     }
-    return IbexSimpleType{tok.Value}, nil
+    return core.IbexSimpleType{tok.Value}, nil
 }
 
 func Parse(s *Structure) (*ASTCompilationUnit, error) {
@@ -371,7 +397,7 @@ func parseFunction(lex *Lexer) (*ASTFunction, error) {
         }
     }
 
-    var retType IbexType = nil
+    var retType core.IbexType = nil
     tok := lex.NextToken()
     if tok.Ty == TokenArrow {
         ty, err := parseType(lex)
@@ -409,3 +435,4 @@ func parseTypeDecl(lex *Lexer) (*ASTTypeDeclaration, error) {
     decl := ASTTypeDeclaration{ident.Value, ty}
     return &decl, nil
 }
+

@@ -1,8 +1,10 @@
-package main
+package parser
 
 import (
     "fmt"
     "unicode/utf8"
+
+	"github.com/augustt198/ibex/util"
 )
 
 type TokenType int
@@ -228,9 +230,9 @@ func (l *Lexer) getToken() bool {
         break
 
     default:
-        if IsIdentStart(chr) {
+        if util.IsIdentStart(chr) {
             l.readIdent()
-        } else if IsDigit(chr) {
+        } else if util.IsDigit(chr) {
             l.readNumber()
         } else {
             err := fmt.Sprintf("Unexpected character: '%c'", chr)
@@ -242,7 +244,7 @@ func (l *Lexer) getToken() bool {
 }
 
 func (l *Lexer) readIdent() {
-    for IsIdentChar(l.peek()) {
+    for util.IsIdentChar(l.peek()) {
         l.read()
     }
     ident := l.src[l.start:l.pos]
@@ -256,7 +258,7 @@ func (l *Lexer) readIdent() {
 }
 
 func (l *Lexer) readNumber() {
-    for IsDigit(l.peek()) {
+    for util.IsDigit(l.peek()) {
         l.read()
     }
     l.emitToken(TokenNumber)

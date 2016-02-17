@@ -1,4 +1,4 @@
-package main
+package core
 
 type IbexType interface {}
 
@@ -16,7 +16,7 @@ type IbexNamedTupleEntry struct {
     Type IbexType
 }
 type IbexNamedTupleType struct {
-    types []*IbexNamedTupleEntry
+    Types []*IbexNamedTupleEntry
 }
 
 type IbexFunctionType struct {

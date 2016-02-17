@@ -1,4 +1,6 @@
-package main
+package parser
+
+import "github.com/augustt198/ibex/core"
 
 type ASTNode interface {}
 
@@ -20,18 +22,18 @@ type ASTBody struct {
 type ASTFunction struct {
     Name string
     Parameters []*FunctionParameter
-    Return IbexType
+    Return core.IbexType
     Body *ASTBody
 }
 
 type ASTTypeDeclaration struct {
     Name string
-    Type IbexType
+    Type core.IbexType
 }
 
 type FunctionParameter struct {
     Name string
-    Type IbexType
+    Type core.IbexType
 }
 
 type Expression interface {

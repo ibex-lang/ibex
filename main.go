@@ -4,6 +4,8 @@ import (
     "os"
     "io/ioutil"
     "fmt"
+
+	"github.com/augustt198/ibex/parser"
 )
 
 func main() {
@@ -21,12 +23,12 @@ func main() {
 }
 
 func compile(src string, name string) {
-    InitExpressionParsing()
+    parser.InitExpressionParsing()
 
-    lex := NewLexer(src)
+    lex := parser.NewLexer(src)
     go lex.Run()
 
-    expr, err := ParseExpression(lex)
+    expr, err := parser.ParseExpression(lex)
     if err == nil {
         fmt.Printf("%#v\n", expr)
     } else {
