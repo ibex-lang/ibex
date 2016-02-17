@@ -1,2 +1,6 @@
 ignore/
 ibex
+
+# vim
+*.swp
+*.swo
