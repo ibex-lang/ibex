@@ -225,7 +225,7 @@ func (l *Lexer) getToken() bool {
 
     case '"': l.readString()
 
-    case ' ', '\n', '\r':
+    case ' ', '\n', '\r', '\t':
         l.start++
         break
 
@@ -272,4 +272,5 @@ func (l *Lexer) readString() {
         Start: l.start,
         End: l.pos,
     }
+    l.start = l.pos
 }
