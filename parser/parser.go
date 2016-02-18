@@ -306,7 +306,7 @@ func parse(s *Structure) (*ASTCompilationUnit, error) {
             }
             unit.Uses = append(unit.Uses, use)
         } else if t.Ty == TokenFunction {
-            fn, err := parseFunction(lex)
+            fn, err := parseFunction(lex, s)
             if err != nil {
                 return nil, err
             }
@@ -349,6 +349,7 @@ func parseParameter(lex *Lexer) (*FunctionParameter, error) {
     }
     name := tok.Value
     tok = lex.NextToken()
+
     if tok.Ty != TokenColon {
         return nil, ErrorAtToken(tok, "Expected ':'")
     }
@@ -359,7 +360,7 @@ func parseParameter(lex *Lexer) (*FunctionParameter, error) {
     return &FunctionParameter{name, ty}, nil
 }
 
-func parseFunction(lex *Lexer) (*ASTFunction, error) {
+func parseFunction(lex *Lexer, s *Structure) (*ASTFunction, error) {
     ident := lex.NextToken()
     if ident.Ty != TokenIdent {
         return nil, ErrorAtToken(ident, "Expected identifier")
@@ -407,13 +408,41 @@ func parseFunction(lex *Lexer) (*ASTFunction, error) {
         retType = ty // doesn't compile without this!?
     }
 
+	var body *ASTBody = nil
+	block, exists := s.getBlock()
+	if exists {
+		b, err := parseBody(block)
+		if err != nil {
+			return nil, err
+		}
+		body = b
+	}
+
     fn := ASTFunction{
         Name: ident.Value,
         Parameters: params,
         Return: retType,
-        Body: nil,
+        Body: body,
     }
     return &fn, nil
+}
+
+func parseBody(s *Structure) (*ASTBody, error) {
+	nodes := []ASTNode{}
+	lex, exist := s.getLine()
+	for exist {
+		go lex.Run()
+
+		expr, err := ParseExpression(lex)
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, expr)
+
+		lex, exist = s.getLine()
+	}
+
+	return &ASTBody{nodes}, nil
 }
 
 func parseTypeDecl(lex *Lexer) (*ASTTypeDeclaration, error) {

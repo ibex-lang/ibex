@@ -3,7 +3,7 @@ package main
 import (
     "os"
     "io/ioutil"
-    "fmt"
+    "log"
 
 	"github.com/ibex-lang/ibex/parser"
 )
@@ -14,8 +14,8 @@ func main() {
     for _, arg := range args {
         file, err := ioutil.ReadFile(arg)
         if err != nil {
-            fmt.Println("Could not read file", arg)
-            fmt.Println("Reason:", err)
+            log.Print("Could not read file", arg)
+            log.Print("Reason:", err)
         }
 
         compile(string(file), arg)
@@ -25,13 +25,14 @@ func main() {
 func compile(src string, name string) {
     parser.InitExpressionParsing()
 
-    lex := parser.NewLexer(src)
-    go lex.Run()
-
-    expr, err := parser.ParseExpression(lex)
-    if err == nil {
-        fmt.Printf("%#v\n", expr)
-    } else {
-        fmt.Println(err)
-    }
+	body, err := parser.Blockify(src)
+	if err != nil {
+		log.Fatal(err)
+	}
+	structure := parser.NewStructure(body)
+	ast, err := parser.Parse(structure)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%#v\n", ast)
 }
